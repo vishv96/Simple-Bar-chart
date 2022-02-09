@@ -1,4 +1,5 @@
 # Simple-Bar-chart
 Simple barchart in Swiftui
 
-![Simulator Screen Shot - iPhone 12 Pro - 2022-02-08 at 23 56 43](https://user-images.githubusercontent.com/4938757/153124717-d79d66bf-56c6-4f9f-acb5-0da3d8a21033.png)
+
+![Simulator Screen Shot - iPhone 12 Pro Max - 2022-02-09 at 16 49 53](https://user-images.githubusercontent.com/4938757/153296071-3b57d0fc-7632-4c24-919a-ba127b88a4c9.png)
