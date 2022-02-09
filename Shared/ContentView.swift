@@ -8,6 +8,11 @@
 import SwiftUI
 import CoreData
 
+struct Constants {
+  static let yIntervalBlockheight = 40
+  static let xIntervalBlockheight = 40
+}
+
 struct ContentView: View {
 
   struct ChatValues: Identifiable {
@@ -17,66 +22,53 @@ struct ContentView: View {
 
   private let title: String = "Sales"
 
+  @State var intervals: [CGFloat] = [CGFloat] ()
+
+  @State var values: [CGFloat] = [53, 32, 50, 80, 20, 32, 32, 50, 80, 20, 32, 32, 50, 80, 20, 32, 32, 50, 80, 20, 32, 32, 50, 80, 20]
+
   var maxValue: CGFloat { values.max() ?? 0.0 }
 
   var minValue: CGFloat { values.min() ?? 0.0 }
 
-  @State var intervals: [CGFloat] = [CGFloat] ()
-
-  @State var values: [CGFloat] = [30, 30, 50, 80, 20]
-
-  private let intervalDistribution = 5
+  private let intervalDistribution = 6
 
   var body: some View {
     ZStack {
-      Color.black.opacity(0.3)
       VStack{
         Spacer()
         //Card
         VStack {
           // Card content
-
-          ZStack(alignment:.bottom) {
-            VStack(alignment:.leading) {
-              // Bar plot
-                VStack {
-
-                  // Title
-                  HStack {
-                    Text(title)
-                    Spacer()
-                  }
-                  .padding(12)
-                  .padding(.leading)
-                  .foregroundColor(.gray)
-
-                  // Lines
-                  IntervalLines($intervals)
-
-                }.padding(.bottom)
-
-
-              // Bottom line
-              Line()
-                .stroke(style: StrokeStyle(lineWidth:1, dash:[3]))
-                .foregroundColor(.gray.opacity(0.6))
-                .padding(.horizontal, 20)
-                .frame(height:30)
-
-            }
-
-            ForEach(0..<values.count, id:\.self) { i in
+          ZStack {
+            VStack {
               HStack {
-                Bar()
-                  .stroke(style: StrokeStyle(lineWidth:10, lineCap: .round))
-                  .fill(LinearGradient(colors: [.blue,.green], startPoint: .top, endPoint: .bottom))
-                  .padding(.leading, 50)
-                  .frame(height: barHeight(calculateForValue: values[i]))
-                  .offset(x: CGFloat(i * 40) )
+                Text(title)
+                Spacer()
               }
-            }.padding(.bottom, 40)
-
+              .padding(.horizontal)
+              .padding(.vertical)
+              GeometryReader { reader in
+                HStack {
+                  YlabelView($intervals)
+                  ZStack {
+                    IntervalLines($intervals)
+                    ScrollView(.horizontal) {
+                      BarLine(frameHeight: reader.frame(in: .local).height,
+                              maxValue: maxValue,
+                              totalIntervals: intervals.count,
+                              values: $values)
+                    }
+                    .frame(height: reader.frame(in: .local).height)
+                  }
+                  Spacer()
+                }
+                .padding(.horizontal)
+              }
+              .frame(height: CGFloat(intervals.count * Constants.yIntervalBlockheight))
+            }
           }
+          .padding(.vertical)
+
         }
         .background(Color.white)
         .cornerRadius(20)
@@ -113,11 +105,74 @@ struct ContentView: View {
     return allValues.reversed()
   }
 
-  private func barHeight(calculateForValue value: CGFloat) -> CGFloat{
-    let intervalBlockHeight = 30
-    let maxBarHeight = CGFloat(intervals.count * intervalBlockHeight)
+
+}
+
+//MARK: - Y Label
+struct YlabelView: View {
+
+  @Binding var intervals: [CGFloat]
+
+  init(_ intervals: Binding<[CGFloat]>) {
+    _intervals = intervals
+  }
+
+  var body: some View {
+    VStack(spacing: 0){
+      ForEach(0..<intervals.count, id:\.self) { i in
+        VStack (spacing: 0){
+          Text("\(Int(intervals[i]))")
+            .font(.caption2)
+          .foregroundColor(.gray)
+          .offset(y:-9)
+          Spacer()
+        }
+        .frame(height: CGFloat(Constants.yIntervalBlockheight))
+
+      }
+    }
+  }
+}
+
+//MARK: - New Bars with values
+struct BarLine: View {
+
+  let frameHeight: CGFloat
+
+  let maxValue: CGFloat
+
+  let totalIntervals: Int
+
+  @Binding var values: [CGFloat]
+
+  var body: some View {
+    HStack(alignment:.bottom){
+      ForEach(0..<values.count, id:\.self){ index in
+        VStack (spacing:0){
+          Text("\(Int(values[index]))")
+            .font(.caption2)
+            .fontWeight(.bold)
+            .foregroundColor(.blue)
+          Bar()
+            .stroke(style: StrokeStyle(lineWidth:10, lineCap: .round))
+            .fill(LinearGradient(colors: [.blue,.green], startPoint: .top, endPoint: .bottom))
+            .frame(height: calculateBarHeight(value: values[index]))
+            .padding(.top, 5)
+          .padding(.leading, 10)
+
+        }
+        
+      }
+    }
+  }
+
+  private func calculateBarHeight(value: CGFloat) -> CGFloat {
+    // Calculate percentage of value relative to maximum value on Y
     let percentageOfMaxValue = (value / maxValue) * 100
-    let height = (maxBarHeight * percentageOfMaxValue) / 100
+
+    let corectedHeight = frameHeight//(CGFloat(totalIntervals) / 0.5)
+    // Caluclate height of the bar relative to frame height
+    let height = (corectedHeight * percentageOfMaxValue) / 100
     return height
   }
 
@@ -132,24 +187,19 @@ struct IntervalLines: View {
     _intervals = intervals
   }
 
-  private var intervalBlockHeight: CGFloat = 30
+  private var intervalBlockHeight: CGFloat = CGFloat(Constants.yIntervalBlockheight)
 
   var body: some View {
     VStack(spacing:0){
       ForEach(0..<intervals.count, id:\.self) { i in
-
         // Line with label
         VStack {
-          HStack {
-            Text("\(Int(intervals[i]))").font(.caption2)
-            Spacer()
-          }
           Line()
             .stroke(style: StrokeStyle(lineWidth:1, dash:[3] ))
             .opacity(0.4)
         }
         .frame(height: intervalBlockHeight)
-        .padding(.horizontal,20)
+        .padding(.trailing,20)
         .foregroundColor(.gray)
 
       }
